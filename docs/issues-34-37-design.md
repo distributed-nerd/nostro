@@ -2,6 +2,13 @@
 
 Proposed for maintainer review. These four changes share one constraint. A cursor can advance only when the store commits the movements and evidence it covers.
 
+## Included in this PR
+
+- **Archive.** `archiveBatchRange(bytes)` reads the inclusive range and checks the record count in an uncompressed SEP-54 batch header. The fixture `fixtures/archive/pubnet/FFFF0687--63864.xdr.zst` is 266 bytes with SHA-256 `640f89f9bfecaee6f2b424a0055b7a62bd22eeae5549f8a46490d4a01513e096`. Its decompressed header identifies a single ledger at 63864. [Original archive object](https://aws-public-blockchain.s3.us-east-2.amazonaws.com/v1.1/stellar/ledgers/pubnet/FFFFFFFF--0-63999/FFFF0687--63864.xdr.zst)
+- **Ledger coverage.** The RPC client and token source expose the optional `latestLedger` reported by the server that answered `getEvents`. It describes the server tip. Certifying an account still requires proof that every page through that ledger has committed.
+- **Source records.** A direct Horizon source pull accepts `includeSourceRecords: true` to return the raw normaliser inputs for the consumed page. The effects result includes joined operations. The fees result includes transactions. Persistence and movement-level links are proposed below.
+- **Live positions.** Both Horizon sources expose `latestCursor(account)`. A caller can capture the current position, then pass it to a later pull to resume after that record. The existing `latest` start mode uses the same method.
+
 ## Archive history and the Horizon boundary (#34)
 
 I propose an optional archive source package that reads Galexie batches, decodes them with Stellar SDK XDR types, and keeps the dependencies out of core. Galexie documents S3 and GCS. SEP-54 specifies the partition and batch keys and the Zstandard-compressed XDR. Stellar's example names an AWS Open Data pubnet bucket. I verified anonymous access to ledger 63864 in that bucket (HTTP 200, 266 bytes compressed). That is a small decoder fixture. I'd also select real ledgers containing a payment and fee for the balance tests. [Galexie storage](https://developers.stellar.org/docs/data/indexers/build-your-own/galexie/admin_guide/prerequisites) · [SEP-54](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0054.md) · [Public bucket configuration](https://developers.stellar.org/docs/build/apps/ingest-sdk/ingestion-pipeline-code)
